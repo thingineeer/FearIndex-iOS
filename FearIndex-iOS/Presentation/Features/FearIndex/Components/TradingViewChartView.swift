@@ -17,6 +17,11 @@ struct TradingViewChartView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> LightweightCharts {
         let chartOptions = ChartOptions(
+            timeScale: TimeScaleOptions(
+                borderVisible: false,
+                timeVisible: false,
+                secondsVisible: false
+            ),
             crosshair: CrosshairOptions(
                 mode: .magnet,
                 vertLine: CrosshairLineOptions(
@@ -108,9 +113,12 @@ extension TradingViewChartView {
         func updateData(_ data: [FearIndex]) {
             currentData = data
 
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+
             let chartData: [AreaData] = data.map { item in
                 AreaData(
-                    time: .utc(timestamp: item.timestamp.timeIntervalSince1970),
+                    time: .string(dateFormatter.string(from: item.timestamp)),
                     value: item.score
                 )
             }
@@ -138,15 +146,39 @@ extension TradingViewChartView {
         ) {}
 
         private func handleCrosshair(_ parameters: MouseEventParams) {
-            guard let time = parameters.time,
-                  case .utc(let timestamp) = time else {
+            guard let time = parameters.time else {
                 DispatchQueue.main.async { [weak self] in
                     self?.parent.selectedValue = nil
                 }
                 return
             }
 
-            let date = Date(timeIntervalSince1970: timestamp)
+            // 시간 문자열에서 날짜 추출
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+
+            var targetDate: Date?
+
+            switch time {
+            case .businessDayString(let dateString):
+                targetDate = dateFormatter.date(from: dateString)
+            case .utc(let timestamp):
+                targetDate = Date(timeIntervalSince1970: timestamp)
+            case .businessDay(let businessDay):
+                let components = DateComponents(
+                    year: businessDay.year,
+                    month: businessDay.month,
+                    day: businessDay.day
+                )
+                targetDate = Calendar.current.date(from: components)
+            }
+
+            guard let date = targetDate else {
+                DispatchQueue.main.async { [weak self] in
+                    self?.parent.selectedValue = nil
+                }
+                return
+            }
 
             // 현재 데이터에서 가장 가까운 포인트 찾기
             let closest = currentData.min { a, b in
