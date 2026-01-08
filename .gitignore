@@ -139,7 +139,7 @@ iOSInjectionProject/
 ### SwiftPackageManager ###
 Packages
 xcuserdata
-*.xcodeproj
+# *.xcodeproj  # Keep xcodeproj for version control
 
 
 ### Xcode ###

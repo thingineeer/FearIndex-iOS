@@ -2,7 +2,7 @@
 //  FearIndex_iOSApp.swift
 //  FearIndex-iOS
 //
-//  Created by 이명진 on 1/8/26.
+//  Created by 이명진 on 1/9/25.
 //
 
 import SwiftUI
@@ -11,7 +11,7 @@ import SwiftUI
 struct FearIndex_iOSApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            AppRoot()
         }
     }
 }
