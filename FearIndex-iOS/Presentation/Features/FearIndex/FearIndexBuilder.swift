@@ -34,9 +34,12 @@ final class FearIndexBuilder: FearIndexBuildable {
     }
 
     private func createDataSource() -> FearIndexDataSourceProtocol {
-        // 실제 CNN API 사용
-        Logger.info("Using Real CNN API DataSource")
-        let networkClient = NetworkClient()
-        return FearIndexDataSource(networkClient: networkClient)
+        // Mock 데이터 사용 (테스트용)
+        Logger.info("Using Mock DataSource")
+        return MockFearIndexDataSource()
+
+        // 실제 CNN API 사용 시 아래 코드로 교체
+        // let networkClient = NetworkClient()
+        // return FearIndexDataSource(networkClient: networkClient)
     }
 }
