@@ -42,26 +42,30 @@ final class MockFearIndexDataSource: FearIndexDataSourceProtocol, @unchecked Sen
         let calendar = Calendar.current
         let today = Date()
 
-        let mockScores: [(daysAgo: Int, score: Double)] = [
-            (0, 46), (1, 52), (2, 48), (3, 45), (4, 42),
-            (5, 38), (6, 35), (7, 44), (14, 38), (21, 42),
-            (30, 38), (45, 28), (60, 22), (75, 18), (90, 12),
-            (100, 8), (110, 15), (120, 25), (150, 35), (180, 45)
-        ]
+        // 365일치 일별 데이터 생성
+        var dataPoints: [String] = []
 
-        let dataPoints = mockScores.compactMap { item -> String? in
+        for daysAgo in 0...365 {
             guard let date = calendar.date(
                 byAdding: .day,
-                value: -item.daysAgo,
+                value: -daysAgo,
                 to: today
-            ) else { return nil }
+            ) else { continue }
+
+            // 사인 곡선 기반 + 노이즈로 자연스러운 변동 생성
+            let baseValue = 50.0
+            let amplitude = 30.0
+            let frequency = Double(daysAgo) / 30.0  // 30일 주기
+            let noise = Double.random(in: -5...5)
+            let score = max(0, min(100, baseValue + amplitude * sin(frequency) + noise))
 
             let timestamp = date.timeIntervalSince1970 * 1000
-            let rating = ratingForScore(item.score)
-            return "{\"x\": \(timestamp), \"y\": \(item.score), \"rating\": \"\(rating)\"}"
+            let rating = ratingForScore(score)
+            dataPoints.append("{\"x\": \(timestamp), \"y\": \(score), \"rating\": \"\(rating)\"}")
         }
 
-        return "[\(dataPoints.joined(separator: ", "))]"
+        // 시간순 정렬 (과거 -> 현재)
+        return "[\(dataPoints.reversed().joined(separator: ", "))]"
     }
 
     nonisolated private func ratingForScore(_ score: Double) -> String {
