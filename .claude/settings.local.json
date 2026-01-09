@@ -11,8 +11,10 @@
       "WebSearch(*)",
       "Task(*)",
       "mcp(*)",
-      "Bash(git reset:*)",
-      "Bash(grep:*)"
-    ]
+      "NotebookEdit(*)",
+      "AskUserQuestion(*)",
+      "TodoWrite(*)"
+    ],
+    "deny": []
   }
 }
