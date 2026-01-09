@@ -91,16 +91,14 @@ struct SwiftUIChartView: View {
 
     private var xAxisValues: AxisMarkValues {
         switch period {
+        case .day:
+            return .automatic(desiredCount: 4)
         case .week:
             return .automatic(desiredCount: 7)
         case .month:
             return .automatic(desiredCount: 5)
         case .oneYear:
             return .automatic(desiredCount: 6)
-        case .fiveYear:
-            return .automatic(desiredCount: 5)
-        case .max:
-            return .automatic(desiredCount: 5)
         }
     }
 
@@ -109,16 +107,14 @@ struct SwiftUIChartView: View {
         formatter.locale = Locale(identifier: "ko_KR")
 
         switch period {
+        case .day:
+            formatter.dateFormat = "HH:mm"
         case .week:
             formatter.dateFormat = "E"
         case .month:
             formatter.dateFormat = "M/d"
         case .oneYear:
             formatter.dateFormat = "yy.M"
-        case .fiveYear:
-            formatter.dateFormat = "yy.M"
-        case .max:
-            formatter.dateFormat = "yyyy"
         }
 
         return formatter.string(from: date)
@@ -218,11 +214,13 @@ struct SwiftUIChartView: View {
         formatter.locale = Locale(identifier: "ko_KR")
 
         switch period {
+        case .day:
+            formatter.dateFormat = "M월 d일 HH:mm"
         case .week:
             formatter.dateFormat = "M월 d일 (E)"
         case .month:
             formatter.dateFormat = "M월 d일"
-        case .oneYear, .fiveYear, .max:
+        case .oneYear:
             formatter.dateFormat = "yyyy년 M월 d일"
         }
 
@@ -256,14 +254,10 @@ struct SwiftUIChartView: View {
     private func sampleData(_ data: [FearIndex]) -> [FearIndex] {
         let maxPoints: Int
         switch period {
-        case .week, .month:
+        case .day, .week, .month:
             return data  // 단기는 샘플링 안함
         case .oneYear:
             maxPoints = 52  // 약 주간 데이터
-        case .fiveYear:
-            maxPoints = 60  // 약 월간 데이터
-        case .max:
-            maxPoints = 80  // 약 월간 데이터
         }
 
         guard data.count > maxPoints else { return data }

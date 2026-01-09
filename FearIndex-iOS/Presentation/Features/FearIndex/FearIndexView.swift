@@ -45,7 +45,6 @@ struct FearIndexView: View {
                 .navigationTitle("차트")
                 .background(Color(.systemGroupedBackground))
                 .refreshable { await interactor.refresh() }
-                .task { await interactor.loadCryptoDataIfNeeded() }
         }
     }
 
@@ -89,10 +88,7 @@ struct FearIndexView: View {
         ScrollView {
             VStack(spacing: 16) {
                 currentScoreHeader(fearIndex)
-                FearHistoryChartView(
-                    data: interactor.historyData,
-                    cryptoData: interactor.cryptoHistoryData
-                )
+                FearHistoryChartView(data: interactor.historyData)
                 timestampView(fearIndex.timestamp)
             }
             .padding()

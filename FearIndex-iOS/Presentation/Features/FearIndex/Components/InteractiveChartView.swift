@@ -170,26 +170,23 @@ struct InteractiveChartView: View {
 
     private var xAxisCount: Int {
         switch period {
+        case .day: return 4
         case .week: return 7
         case .month: return 5
         case .oneYear: return 6
-        case .fiveYear: return 6
-        case .max: return 6
         }
     }
 
     private var xAxisFormat: Date.FormatStyle {
         switch period {
+        case .day:
+            return .dateTime.hour().minute()
         case .week:
             return .dateTime.weekday(.abbreviated)
         case .month:
             return .dateTime.month(.abbreviated).day()
         case .oneYear:
             return .dateTime.month(.abbreviated)
-        case .fiveYear:
-            return .dateTime.year().month(.abbreviated)
-        case .max:
-            return .dateTime.year()
         }
     }
 

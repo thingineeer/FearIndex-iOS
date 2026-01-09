@@ -10,15 +10,9 @@ import Charts
 
 struct FearHistoryChartView: View {
     let data: [FearIndex]
-    let cryptoData: [FearIndex]
 
-    @State private var selectedPeriod: ChartPeriod = .month
+    @State private var selectedPeriod: ChartPeriod = .week
     @State private var selectedValue: FearIndex?
-
-    init(data: [FearIndex], cryptoData: [FearIndex] = []) {
-        self.data = data
-        self.cryptoData = cryptoData
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -68,9 +62,6 @@ struct FearHistoryChartView: View {
 
     /// 현재 기간에 맞는 데이터 선택
     private var currentData: [FearIndex] {
-        if selectedPeriod.needsLongTermData && !cryptoData.isEmpty {
-            return cryptoData
-        }
         return data
     }
 
@@ -159,50 +150,26 @@ struct FearHistoryChartView: View {
 // MARK: - Chart Period
 
 enum ChartPeriod: CaseIterable {
-    case week       // 1주
-    case month      // 1개월
+    case day        // 1일
+    case week       // 7일
+    case month      // 30일
     case oneYear    // 1년
-    case fiveYear   // 5년
-    case max        // 전체 (2018년부터)
 
     var title: String {
         switch self {
-        case .week: return "1주"
-        case .month: return "1월"
+        case .day: return "1일"
+        case .week: return "7일"
+        case .month: return "30일"
         case .oneYear: return "1년"
-        case .fiveYear: return "5년"
-        case .max: return "MAX"
         }
     }
 
     var days: Int {
         switch self {
+        case .day: return 1
         case .week: return 7
         case .month: return 30
         case .oneYear: return 365
-        case .fiveYear: return 365 * 5
-        case .max: return 365 * 10  // 2018년부터 약 7년, 넉넉히 10년
-        }
-    }
-
-    /// 차트에 보이는 화면당 일수 (스크롤용)
-    var visibleDays: Int {
-        switch self {
-        case .week: return 7
-        case .month: return 30
-        case .oneYear: return 365      // 1년 전체를 한 화면에
-        case .fiveYear: return 365     // 5년치 중 1년씩 보여줌
-        case .max: return 365 * 2      // 전체 중 2년씩 보여줌
-        }
-    }
-
-    /// 장기 데이터 필요 여부
-    var needsLongTermData: Bool {
-        switch self {
-        case .week, .month, .oneYear:
-            return false
-        case .fiveYear, .max:
-            return true
         }
     }
 }
