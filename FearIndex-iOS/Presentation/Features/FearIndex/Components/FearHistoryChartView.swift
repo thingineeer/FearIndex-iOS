@@ -10,10 +10,15 @@ import Charts
 
 struct FearHistoryChartView: View {
     let data: [FearIndex]
+    let cryptoData: [FearIndex]
 
-    @State private var selectedInterval: ChartInterval = .daily
-    @State private var selectedPeriod: ChartPeriod = .week
+    @State private var selectedPeriod: ChartPeriod = .month
     @State private var selectedValue: FearIndex?
+
+    init(data: [FearIndex], cryptoData: [FearIndex] = []) {
+        self.data = data
+        self.cryptoData = cryptoData
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -53,12 +58,20 @@ struct FearHistoryChartView: View {
     }
 
     private var chartView: some View {
-        TradingViewChartView(
-            data: data,
+        SwiftUIChartView(
+            data: currentData,
             period: selectedPeriod,
             selectedValue: $selectedValue
         )
         .frame(height: 250)
+    }
+
+    /// 현재 기간에 맞는 데이터 선택
+    private var currentData: [FearIndex] {
+        if selectedPeriod.needsLongTermData && !cryptoData.isEmpty {
+            return cryptoData
+        }
+        return data
     }
 
     private func colorForScore(_ score: Double) -> Color {
@@ -78,56 +91,22 @@ struct FearHistoryChartView: View {
     }
 
     private var attributionView: some View {
-        Link(destination: URL(string: "https://www.tradingview.com/")!) {
-            HStack(spacing: 4) {
-                Image(systemName: "chart.line.uptrend.xyaxis")
-                    .font(.caption2)
-                Text("Powered by TradingView")
-                    .font(.caption2)
-            }
-            .foregroundStyle(.secondary)
+        HStack(spacing: 4) {
+            Image(systemName: "chart.xyaxis.line")
+                .font(.caption2)
+            Text("Powered by SwiftUI Charts")
+                .font(.caption2)
         }
+        .foregroundStyle(.secondary)
     }
 
     private var controlsRow: some View {
         HStack {
-            intervalDropdown
-            Spacer()
             Text("히스토리")
                 .font(.headline)
             Spacer()
             dataCountLabel
         }
-    }
-
-    private var intervalDropdown: some View {
-        Menu {
-            ForEach(ChartInterval.allCases, id: \.self) { interval in
-                Button {
-                    selectedInterval = interval
-                } label: {
-                    HStack {
-                        Text(interval.title)
-                        if selectedInterval == interval {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Text(selectedInterval.title)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                Image(systemName: "chevron.down")
-                    .font(.caption)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color(.systemGray5))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .foregroundStyle(.primary)
     }
 
     private var dataCountLabel: some View {
@@ -165,7 +144,7 @@ struct FearHistoryChartView: View {
         let calendar = Calendar.current
         let now = Date()
 
-        return data.filter { item in
+        return currentData.filter { item in
             guard let daysAgo = calendar.dateComponents(
                 [.day],
                 from: item.timestamp,
@@ -177,51 +156,53 @@ struct FearHistoryChartView: View {
     }
 }
 
-// MARK: - Chart Interval (분봉)
-
-enum ChartInterval: CaseIterable {
-    case oneMin
-    case fiveMin
-    case fifteenMin
-    case thirtyMin
-    case sixtyMin
-    case daily
-
-    var title: String {
-        switch self {
-        case .oneMin: return "1분"
-        case .fiveMin: return "5분"
-        case .fifteenMin: return "15분"
-        case .thirtyMin: return "30분"
-        case .sixtyMin: return "60분"
-        case .daily: return "일봉"
-        }
-    }
-}
-
-// MARK: - Chart Period (일/주/월/년)
+// MARK: - Chart Period
 
 enum ChartPeriod: CaseIterable {
-    case day
-    case week
-    case month
-    case year
+    case week       // 1주
+    case month      // 1개월
+    case oneYear    // 1년
+    case fiveYear   // 5년
+    case max        // 전체 (2018년부터)
 
     var title: String {
         switch self {
-        case .day: return "일"
-        case .week: return "주"
-        case .month: return "월"
-        case .year: return "년"
+        case .week: return "1주"
+        case .month: return "1월"
+        case .oneYear: return "1년"
+        case .fiveYear: return "5년"
+        case .max: return "MAX"
         }
     }
 
     var days: Int {
         switch self {
-        case .day: return 1
         case .week: return 7
         case .month: return 30
-        case .year: return 365
+        case .oneYear: return 365
+        case .fiveYear: return 365 * 5
+        case .max: return 365 * 10  // 2018년부터 약 7년, 넉넉히 10년
+        }
+    }
+
+    /// 차트에 보이는 화면당 일수 (스크롤용)
+    var visibleDays: Int {
+        switch self {
+        case .week: return 7
+        case .month: return 30
+        case .oneYear: return 90       // 1년치 중 3개월씩 보여줌
+        case .fiveYear: return 365     // 5년치 중 1년씩 보여줌
+        case .max: return 365 * 2      // 전체 중 2년씩 보여줌
+        }
+    }
+
+    /// 장기 데이터 필요 여부
+    var needsLongTermData: Bool {
+        switch self {
+        case .week, .month, .oneYear:
+            return false
+        case .fiveYear, .max:
+            return true
         }
     }
 }
