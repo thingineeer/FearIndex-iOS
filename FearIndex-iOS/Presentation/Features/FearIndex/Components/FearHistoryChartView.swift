@@ -190,7 +190,7 @@ enum ChartPeriod: CaseIterable {
         switch self {
         case .week: return 7
         case .month: return 30
-        case .oneYear: return 90       // 1년치 중 3개월씩 보여줌
+        case .oneYear: return 365      // 1년 전체를 한 화면에
         case .fiveYear: return 365     // 5년치 중 1년씩 보여줌
         case .max: return 365 * 2      // 전체 중 2년씩 보여줌
         }

@@ -16,32 +16,23 @@ struct SwiftUIChartView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var touchLocation: CGPoint = .zero
     @State private var isDragging = false
-    @State private var scrollPosition: Date = Date()
 
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .topLeading) {
-                scrollableChart(geometry: geometry)
+                chartContent(geometry: geometry)
 
                 if isDragging, let selected = selectedValue {
                     selectionIndicator(selected, geometry: geometry)
                 }
             }
         }
-        .onAppear {
-            // 스크롤 초기 위치를 가장 최근 데이터로 설정
-            if let lastDate = filteredData.last?.timestamp {
-                scrollPosition = lastDate
-            }
-        }
     }
 
-    // MARK: - Scrollable Chart
+    // MARK: - Chart Content
 
     @ViewBuilder
-    private func scrollableChart(geometry: GeometryProxy) -> some View {
-        let chartWidth = calculateChartWidth(geometry: geometry)
-
+    private func chartContent(geometry: GeometryProxy) -> some View {
         Chart(filteredData, id: \.timestamp) { item in
             AreaMark(
                 x: .value("Date", item.timestamp),
@@ -75,31 +66,9 @@ struct SwiftUIChartView: View {
         .chartYScale(domain: 0...100)
         .chartXAxis { xAxisMarks }
         .chartYAxis { yAxisMarks }
-        .chartScrollableAxes(.horizontal)
-        .chartXVisibleDomain(length: visibleDomainLength)
-        .chartScrollPosition(x: $scrollPosition)
         .chartOverlay { proxy in
             chartOverlayContent(proxy: proxy, geometry: geometry)
         }
-        .frame(minWidth: chartWidth)
-    }
-
-    /// 차트 너비 계산 (스크롤을 위해)
-    private func calculateChartWidth(geometry: GeometryProxy) -> CGFloat {
-        let dataCount = filteredData.count
-        let visibleCount = period.visibleDays
-
-        if dataCount <= visibleCount {
-            return geometry.size.width
-        }
-
-        let ratio = CGFloat(dataCount) / CGFloat(visibleCount)
-        return geometry.size.width * ratio
-    }
-
-    /// X축에 보이는 시간 범위 (초 단위)
-    private var visibleDomainLength: Int {
-        period.visibleDays * 24 * 60 * 60
     }
 
     // MARK: - X Axis
@@ -123,20 +92,15 @@ struct SwiftUIChartView: View {
     private var xAxisValues: AxisMarkValues {
         switch period {
         case .week:
-            // 7일 → 7개 라벨 (매일)
             return .automatic(desiredCount: 7)
         case .month:
-            // 30일 → 5개 라벨 (약 6일마다)
             return .automatic(desiredCount: 5)
         case .oneYear:
-            // 90일 visible → 3개 라벨 (월별)
-            return .automatic(desiredCount: 3)
+            return .automatic(desiredCount: 6)
         case .fiveYear:
-            // 365일 visible → 4개 라벨 (분기별)
-            return .automatic(desiredCount: 4)
+            return .automatic(desiredCount: 5)
         case .max:
-            // 730일 visible → 4개 라벨 (6개월마다)
-            return .automatic(desiredCount: 4)
+            return .automatic(desiredCount: 5)
         }
     }
 
@@ -146,19 +110,14 @@ struct SwiftUIChartView: View {
 
         switch period {
         case .week:
-            // 요일 표시: 월, 화, 수...
             formatter.dateFormat = "E"
         case .month:
-            // 날짜 표시: 1/5, 1/12...
             formatter.dateFormat = "M/d"
         case .oneYear:
-            // 년월 표시: 24.1, 24.2... (년도 포함으로 중복 방지)
             formatter.dateFormat = "yy.M"
         case .fiveYear:
-            // 년도 + 분기: 24.1, 24.7...
             formatter.dateFormat = "yy.M"
         case .max:
-            // 년도만: 2020, 2022...
             formatter.dateFormat = "yyyy"
         }
 

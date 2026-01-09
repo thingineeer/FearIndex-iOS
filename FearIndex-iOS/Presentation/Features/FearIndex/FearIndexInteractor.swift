@@ -82,7 +82,7 @@ final class FearIndexInteractor: FearIndexInteractable {
 
             // Crypto 장기 데이터 비동기 로드 (선택적)
             if let cryptoUseCase = fetchCryptoUseCase {
-                Task {
+                Task { @MainActor in
                     do {
                         let cryptoData = try await cryptoUseCase.execute(forceRefresh: forceRefresh)
                         self.cryptoHistoryData = cryptoData
