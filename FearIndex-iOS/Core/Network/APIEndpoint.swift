@@ -14,7 +14,8 @@ enum APIEndpoint: Sendable {
     nonisolated var url: URL? {
         switch self {
         case .fearIndexCurrent:
-            let startDate = dateString(daysAgo: 7)
+            // 1년치 데이터 요청 (365일)
+            let startDate = dateString(daysAgo: 365)
             return URL(string: "\(baseURL)/index/fearandgreed/graphdata/\(startDate)")
         case .fearIndexHistory(let startDate):
             return URL(string: "\(baseURL)/index/fearandgreed/graphdata/\(startDate)")
