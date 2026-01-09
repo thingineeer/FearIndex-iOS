@@ -9,8 +9,8 @@ import Foundation
 
 final class MockFearIndexDataSource: FearIndexDataSourceProtocol, @unchecked Sendable {
 
-    nonisolated func fetch() async throws -> CNNFearGreedResponse {
-        Logger.info("Using Mock Data")
+    func fetch(forceRefresh: Bool) async throws -> CNNFearGreedResponse {
+        Logger.info("Using Mock Data (forceRefresh: \(forceRefresh))")
 
         let json = """
         {
@@ -32,13 +32,13 @@ final class MockFearIndexDataSource: FearIndexDataSourceProtocol, @unchecked Sen
         }
         """
 
-        return try! JSONDecoder().decode(
+        return try JSONDecoder().decode(
             CNNFearGreedResponse.self,
             from: json.data(using: .utf8)!
         )
     }
 
-    nonisolated private func generateMockHistoryJSON() -> String {
+    private func generateMockHistoryJSON() -> String {
         let calendar = Calendar.current
         let today = Date()
 
@@ -68,7 +68,7 @@ final class MockFearIndexDataSource: FearIndexDataSourceProtocol, @unchecked Sen
         return "[\(dataPoints.reversed().joined(separator: ", "))]"
     }
 
-    nonisolated private func ratingForScore(_ score: Double) -> String {
+    private func ratingForScore(_ score: Double) -> String {
         switch score {
         case 0..<25: return "extreme fear"
         case 25..<45: return "fear"

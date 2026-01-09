@@ -10,20 +10,20 @@ import Foundation
 final class FearIndexRepository: FearIndexRepositoryProtocol, @unchecked Sendable {
     private let dataSource: FearIndexDataSourceProtocol
 
-    nonisolated init(dataSource: FearIndexDataSourceProtocol) {
+    init(dataSource: FearIndexDataSourceProtocol) {
         self.dataSource = dataSource
     }
 
-    nonisolated func fetchCurrent() async throws -> FearIndex {
-        let response = try await dataSource.fetch()
+    func fetchCurrent(forceRefresh: Bool) async throws -> FearIndex {
+        let response = try await dataSource.fetch(forceRefresh: forceRefresh)
         guard let domain = response.fearAndGreed.toDomain() else {
             throw FearIndexError.invalidData
         }
         return domain
     }
 
-    nonisolated func fetchHistory(days: Int) async throws -> [FearIndex] {
-        let response = try await dataSource.fetch()
+    func fetchHistory(days: Int, forceRefresh: Bool) async throws -> [FearIndex] {
+        let response = try await dataSource.fetch(forceRefresh: forceRefresh)
         return response.fearAndGreedHistorical.data.map { $0.toDomain() }
     }
 }

@@ -5,11 +5,11 @@
 //  Created by 이명진 on 1/9/25.
 //
 
-@preconcurrency import Foundation
+import Foundation
 
 // MARK: - CNN API Response
 
-struct CNNFearGreedResponse: Decodable, Sendable {
+struct CNNFearGreedResponse: Codable, Sendable {
     let fearAndGreed: FearAndGreedDTO
     let fearAndGreedHistorical: FearAndGreedHistoricalDTO
 
@@ -18,16 +18,22 @@ struct CNNFearGreedResponse: Decodable, Sendable {
         case fearAndGreedHistorical = "fear_and_greed_historical"
     }
 
-    nonisolated init(from decoder: Decoder) throws {
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         fearAndGreed = try container.decode(FearAndGreedDTO.self, forKey: .fearAndGreed)
         fearAndGreedHistorical = try container.decode(FearAndGreedHistoricalDTO.self, forKey: .fearAndGreedHistorical)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(fearAndGreed, forKey: .fearAndGreed)
+        try container.encode(fearAndGreedHistorical, forKey: .fearAndGreedHistorical)
     }
 }
 
 // MARK: - Current Fear & Greed
 
-struct FearAndGreedDTO: Decodable, Sendable {
+struct FearAndGreedDTO: Codable, Sendable {
     let score: Double
     let rating: String
     let timestamp: String
@@ -44,7 +50,7 @@ struct FearAndGreedDTO: Decodable, Sendable {
         case previous1Year = "previous_1_year"
     }
 
-    nonisolated init(from decoder: Decoder) throws {
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         score = try container.decode(Double.self, forKey: .score)
         rating = try container.decode(String.self, forKey: .rating)
@@ -54,17 +60,32 @@ struct FearAndGreedDTO: Decodable, Sendable {
         previous1Month = try container.decode(Double.self, forKey: .previous1Month)
         previous1Year = try container.decode(Double.self, forKey: .previous1Year)
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(score, forKey: .score)
+        try container.encode(rating, forKey: .rating)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(previousClose, forKey: .previousClose)
+        try container.encode(previous1Week, forKey: .previous1Week)
+        try container.encode(previous1Month, forKey: .previous1Month)
+        try container.encode(previous1Year, forKey: .previous1Year)
+    }
 }
 
 // MARK: - Historical Data
 
-struct FearAndGreedHistoricalDTO: Decodable, Sendable {
+struct FearAndGreedHistoricalDTO: Codable, Sendable {
     let timestamp: Double
     let score: Double
     let rating: String
     let data: [HistoricalDataPoint]
 
-    nonisolated init(from decoder: Decoder) throws {
+    enum CodingKeys: String, CodingKey {
+        case timestamp, score, rating, data
+    }
+
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         timestamp = try container.decode(Double.self, forKey: .timestamp)
         score = try container.decode(Double.self, forKey: .score)
@@ -72,32 +93,43 @@ struct FearAndGreedHistoricalDTO: Decodable, Sendable {
         data = try container.decode([HistoricalDataPoint].self, forKey: .data)
     }
 
-    enum CodingKeys: String, CodingKey {
-        case timestamp, score, rating, data
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(timestamp, forKey: .timestamp)
+        try container.encode(score, forKey: .score)
+        try container.encode(rating, forKey: .rating)
+        try container.encode(data, forKey: .data)
     }
 }
 
-struct HistoricalDataPoint: Decodable, Sendable {
+struct HistoricalDataPoint: Codable, Sendable {
     let x: Double  // timestamp in milliseconds
     let y: Double  // score
     let rating: String
 
-    nonisolated init(from decoder: Decoder) throws {
+    enum CodingKeys: String, CodingKey {
+        case x, y, rating
+    }
+
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         x = try container.decode(Double.self, forKey: .x)
         y = try container.decode(Double.self, forKey: .y)
         rating = try container.decode(String.self, forKey: .rating)
     }
 
-    enum CodingKeys: String, CodingKey {
-        case x, y, rating
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(x, forKey: .x)
+        try container.encode(y, forKey: .y)
+        try container.encode(rating, forKey: .rating)
     }
 }
 
 // MARK: - Domain Mapping
 
 extension FearAndGreedDTO {
-    nonisolated func toDomain() -> FearIndex? {
+    func toDomain() -> FearIndex? {
         guard let date = parseTimestamp() else { return nil }
         let domainRating = FearIndex.Rating(rawValue: rating) ?? .neutral
 
@@ -112,7 +144,7 @@ extension FearAndGreedDTO {
         )
     }
 
-    nonisolated private func parseTimestamp() -> Date? {
+    private func parseTimestamp() -> Date? {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         return formatter.date(from: timestamp)
@@ -120,7 +152,7 @@ extension FearAndGreedDTO {
 }
 
 extension HistoricalDataPoint {
-    nonisolated func toDomain() -> FearIndex {
+    func toDomain() -> FearIndex {
         let date = Date(timeIntervalSince1970: x / 1000)
         let domainRating = FearIndex.Rating(rawValue: rating) ?? .neutral
 

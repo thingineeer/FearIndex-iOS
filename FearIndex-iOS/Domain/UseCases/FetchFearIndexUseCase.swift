@@ -8,7 +8,13 @@
 import Foundation
 
 protocol FetchFearIndexUseCaseProtocol: Sendable {
-    func execute() async throws -> FearIndex
+    func execute(forceRefresh: Bool) async throws -> FearIndex
+}
+
+extension FetchFearIndexUseCaseProtocol {
+    func execute() async throws -> FearIndex {
+        try await execute(forceRefresh: false)
+    }
 }
 
 struct FetchFearIndexUseCase: FetchFearIndexUseCaseProtocol {
@@ -18,7 +24,7 @@ struct FetchFearIndexUseCase: FetchFearIndexUseCaseProtocol {
         self.repository = repository
     }
 
-    func execute() async throws -> FearIndex {
-        try await repository.fetchCurrent()
+    func execute(forceRefresh: Bool) async throws -> FearIndex {
+        try await repository.fetchCurrent(forceRefresh: forceRefresh)
     }
 }

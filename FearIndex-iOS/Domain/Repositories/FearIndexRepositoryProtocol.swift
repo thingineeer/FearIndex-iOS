@@ -8,6 +8,16 @@
 import Foundation
 
 protocol FearIndexRepositoryProtocol: Sendable {
-    func fetchCurrent() async throws -> FearIndex
-    func fetchHistory(days: Int) async throws -> [FearIndex]
+    func fetchCurrent(forceRefresh: Bool) async throws -> FearIndex
+    func fetchHistory(days: Int, forceRefresh: Bool) async throws -> [FearIndex]
+}
+
+extension FearIndexRepositoryProtocol {
+    func fetchCurrent() async throws -> FearIndex {
+        try await fetchCurrent(forceRefresh: false)
+    }
+
+    func fetchHistory(days: Int) async throws -> [FearIndex] {
+        try await fetchHistory(days: days, forceRefresh: false)
+    }
 }
