@@ -45,6 +45,7 @@ struct FearIndexView: View {
                 .navigationTitle("차트")
                 .background(Color(.systemGroupedBackground))
                 .refreshable { await interactor.refresh() }
+                .task { await interactor.loadCryptoDataIfNeeded() }
         }
     }
 

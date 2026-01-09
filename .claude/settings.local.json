@@ -13,7 +13,9 @@
       "mcp(*)",
       "NotebookEdit(*)",
       "AskUserQuestion(*)",
-      "TodoWrite(*)"
+      "TodoWrite(*)",
+      "Bash(python3:*)",
+      "Bash(GIT_COMMITTER_NAME=\"thingineeer\" GIT_COMMITTER_EMAIL=\"dlaudwls1203@gmail.com\" git commit:*)"
     ],
     "deny": []
   }

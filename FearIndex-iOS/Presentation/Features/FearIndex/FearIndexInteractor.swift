@@ -34,6 +34,7 @@ final class FearIndexInteractor: FearIndexInteractable {
     private(set) var cryptoHistoryData: [FearIndex] = []  // 2018년부터의 장기 데이터
     private(set) var lastUpdated: Date?
     private(set) var isAutoRefreshEnabled = false
+    private(set) var isCryptoLoading = false
 
     private let fetchUseCase: FetchFearIndexUseCaseProtocol
     private let fetchHistoryUseCase: FetchFearIndexHistoryUseCaseProtocol
@@ -42,6 +43,7 @@ final class FearIndexInteractor: FearIndexInteractable {
 
     private var autoRefreshTask: Task<Void, Never>?
     private let autoRefreshInterval: TimeInterval = 5 * 60  // 5분
+    private var cryptoDataLoaded = false
 
     init(
         fetchUseCase: FetchFearIndexUseCaseProtocol,
@@ -59,6 +61,25 @@ final class FearIndexInteractor: FearIndexInteractable {
 
     func refresh() async {
         await fetchData(forceRefresh: true)
+    }
+
+    /// Crypto 장기 데이터 로드 (차트 탭에서 호출)
+    func loadCryptoDataIfNeeded() async {
+        guard !cryptoDataLoaded, !isCryptoLoading else { return }
+        guard let cryptoUseCase = fetchCryptoUseCase else { return }
+
+        isCryptoLoading = true
+
+        do {
+            let cryptoData = try await cryptoUseCase.execute(forceRefresh: false)
+            self.cryptoHistoryData = cryptoData
+            self.cryptoDataLoaded = true
+            Logger.info("Crypto history loaded: \(cryptoData.count) data points")
+        } catch {
+            Logger.error("Crypto history fetch failed: \(error.localizedDescription)")
+        }
+
+        isCryptoLoading = false
     }
 
     private func fetchData(forceRefresh: Bool) async {
@@ -79,19 +100,6 @@ final class FearIndexInteractor: FearIndexInteractable {
             listener?.fearIndexDidUpdate(currentIndex)
 
             Logger.info("Fear Index updated: \(Int(currentIndex.score)) (\(forceRefresh ? "forced" : "cached"))")
-
-            // Crypto 장기 데이터 비동기 로드 (선택적)
-            if let cryptoUseCase = fetchCryptoUseCase {
-                Task { @MainActor in
-                    do {
-                        let cryptoData = try await cryptoUseCase.execute(forceRefresh: forceRefresh)
-                        self.cryptoHistoryData = cryptoData
-                        Logger.info("Crypto history loaded: \(cryptoData.count) data points")
-                    } catch {
-                        Logger.error("Crypto history fetch failed: \(error.localizedDescription)")
-                    }
-                }
-            }
         } catch {
             state = .error(mapError(error))
             Logger.error("Fear Index fetch failed: \(error.localizedDescription)")

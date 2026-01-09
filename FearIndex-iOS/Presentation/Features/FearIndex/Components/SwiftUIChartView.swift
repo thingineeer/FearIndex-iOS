@@ -235,6 +235,7 @@ struct SwiftUIChartView: View {
         let calendar = Calendar.current
         let now = Date()
 
+        // 1. 기간 필터링
         let filtered = data.filter { item in
             guard let daysAgo = calendar.dateComponents(
                 [.day],
@@ -245,7 +246,43 @@ struct SwiftUIChartView: View {
             return daysAgo >= 0 && daysAgo <= period.days
         }
 
-        return filtered.sorted { $0.timestamp < $1.timestamp }
+        let sorted = filtered.sorted { $0.timestamp < $1.timestamp }
+
+        // 2. 샘플링 (장기 데이터 최적화)
+        return sampleData(sorted)
+    }
+
+    /// 장기 데이터 샘플링 (성능 최적화)
+    private func sampleData(_ data: [FearIndex]) -> [FearIndex] {
+        let maxPoints: Int
+        switch period {
+        case .week, .month:
+            return data  // 단기는 샘플링 안함
+        case .oneYear:
+            maxPoints = 52  // 약 주간 데이터
+        case .fiveYear:
+            maxPoints = 60  // 약 월간 데이터
+        case .max:
+            maxPoints = 80  // 약 월간 데이터
+        }
+
+        guard data.count > maxPoints else { return data }
+
+        // 균등 간격 샘플링
+        let step = Double(data.count - 1) / Double(maxPoints - 1)
+        var sampled: [FearIndex] = []
+
+        for i in 0..<maxPoints {
+            let index = Int(Double(i) * step)
+            sampled.append(data[index])
+        }
+
+        // 마지막 데이터 포함 보장
+        if let last = data.last, sampled.last?.timestamp != last.timestamp {
+            sampled[sampled.count - 1] = last
+        }
+
+        return sampled
     }
 
     private func findClosestDataPoint(to date: Date) -> FearIndex? {
