@@ -26,6 +26,8 @@ struct FearIndexView: View {
                 .tag(Tab.chart)
         }
         .task { await interactor.loadFearIndex() }
+        .onAppear { interactor.startAutoRefresh() }
+        .onDisappear { interactor.stopAutoRefresh() }
     }
 
     private var homeTab: some View {
@@ -86,7 +88,10 @@ struct FearIndexView: View {
         ScrollView {
             VStack(spacing: 16) {
                 currentScoreHeader(fearIndex)
-                FearHistoryChartView(data: interactor.historyData)
+                FearHistoryChartView(
+                    data: interactor.historyData,
+                    cryptoData: interactor.cryptoHistoryData
+                )
                 timestampView(fearIndex.timestamp)
             }
             .padding()
@@ -303,7 +308,8 @@ private struct MiniChartView: View {
 #Preview {
     let interactor = FearIndexInteractor(
         fetchUseCase: PreviewFetchFearIndexUseCase(),
-        fetchHistoryUseCase: PreviewFetchHistoryUseCase()
+        fetchHistoryUseCase: PreviewFetchHistoryUseCase(),
+        fetchCryptoUseCase: PreviewFetchCryptoUseCase()
     )
     return FearIndexView(interactor: interactor)
 }
@@ -311,7 +317,7 @@ private struct MiniChartView: View {
 // MARK: - Preview Helpers
 
 private struct PreviewFetchFearIndexUseCase: FetchFearIndexUseCaseProtocol {
-    func execute() async throws -> FearIndex {
+    func execute(forceRefresh: Bool) async throws -> FearIndex {
         FearIndex(
             score: 46,
             rating: .neutral,
@@ -325,5 +331,9 @@ private struct PreviewFetchFearIndexUseCase: FetchFearIndexUseCaseProtocol {
 }
 
 private struct PreviewFetchHistoryUseCase: FetchFearIndexHistoryUseCaseProtocol {
-    func execute(days: Int) async throws -> [FearIndex] { [] }
+    func execute(days: Int, forceRefresh: Bool) async throws -> [FearIndex] { [] }
+}
+
+private struct PreviewFetchCryptoUseCase: FetchCryptoFearIndexUseCaseProtocol {
+    func execute(forceRefresh: Bool) async throws -> [FearIndex] { [] }
 }
